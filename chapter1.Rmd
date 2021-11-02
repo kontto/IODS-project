@@ -1,9 +1,10 @@
 
-## About the course 
+## Introduction
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+### About the course 
 
-The course introduces some basic statistical analysis methods and open research tools to analyze data, and to document and share code and results. The course consists of seven weekly meetings with the following topics:
+The course introduces some basic statistical analysis methods and open research tools to analyze data, and to document and share code and results. The course consists of seven weekly meetings with the following topics:\
+
 * Start me up!
 * Regression and model validation
 * Logistic regression
@@ -12,17 +13,10 @@ The course introduces some basic statistical analysis methods and open research 
 * Analysis of longitudinal data
 * Kimmo's textbook, special edition
 
-## About me
+The course is organized __online__ and is organized by __Doctoral School in Humanities and Social Sciences__.
 
-My name is Jukka Kontto and I'm a PhD student in the University of Helsinki. I'm a statistician and the topic of my PhD thesis is Projections of Population Health Outcomes. I currently have a busy schedule but I was happy to squeeze this course into it. I'm looking forward for participating in IODS and getting an overview about the tools used for documenting and sharing R-code. My supervisor told me about this course already a few years ago.\
+### About me
 
-A link to my _GitHub repository_ is https://github.com/kontto/IODS-project
+I'm a PhD student in the University of Helsinki and the topic of my PhD thesis is Projections of Population Health Outcomes. I'm working at the Finnish Institute for Health and Welfare (THL) as a statistical researcher. I currently have a busy schedule but I was happy to squeeze this course into it although my supervisor told me about this course already a few years ago. I'm looking forward for participating in IODS and getting an overview about the tools used for documenting and sharing R-code.\
 
-```{r}
-# This is a so-called "R chunk" where you can write R code.
-
-date()
-
-```
-The text continues here.
-
+The link to my [__GitHub repository__](https://github.com/kontto/IODS-project).\
