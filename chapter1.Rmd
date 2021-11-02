@@ -3,7 +3,7 @@
 
 *Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
 
-The course introduces open research tools to analyze data, and to document and share code and results. The course consists of seven meetings with the following topics:
+The course introduces some basic statistical analysis methods and open research tools to analyze data, and to document and share code and results. The course consists of seven weekly meetings with the following topics:
 * Start me up!
 * Regression and model validation
 * Logistic regression
@@ -14,7 +14,7 @@ The course introduces open research tools to analyze data, and to document and s
 
 ## About me
 
-My name is Jukka Kontto and I'm a PhD student in the University of Helsinki. I'm feeling good right now. I currently have a busy schedule but I was happy to squeeze this course into it. I'm looking forward for participating in IODS and getting an overview about the tools used for documenting and sharing R-code. My supervisor told me about this course already a few years ago.\
+My name is Jukka Kontto and I'm a PhD student in the University of Helsinki. I'm a statistician and the topic of my PhD thesis is Projections of Population Health Outcomes. I currently have a busy schedule but I was happy to squeeze this course into it. I'm looking forward for participating in IODS and getting an overview about the tools used for documenting and sharing R-code. My supervisor told me about this course already a few years ago.\
 
 A link to my _GitHub repository_ is https://github.com/kontto/IODS-project
 
