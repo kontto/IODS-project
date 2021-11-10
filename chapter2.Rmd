@@ -1,13 +1,84 @@
-# Insert chapter 2 title here
 
-*Describe the work you have done this week and summarize your learning.*
+## 2. Regression and model validation
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+### Data
 
-```{r}
-date()
+```{r, echo=FALSE, message=FALSE}
+library(GGally)
+library(ggplot2)
 ```
 
-Here we go again...
+In this week analysis we use JYTOPKYS2 dataset which contains survey variables related to students' learning and teaching. The analysis dataset consists of 166 students and 7 variables. There are no missing values in the dataset. The dataset includes following variables:\
+
+* gender (binary variable)
+  + either F=female or M=male
+* age (numeric variable with integer values)
+  + in years, derived from the date of birth
+* attitude (global attitude towards statistics, numeric variable)
+  + mean of ten items relating to attitude towards statistics. Each item has integer values 1-5
+* deep (deep learning approach, numeric variable)
+  + mean of twelve items relating to deep learning. Each item has integer values 1-5
+* stra (strategic learning approach, numeric variable)
+  + mean of eight items relating to strategic learning. Each item has integer values 1-5
+* surf (surface learning approach, numeric variable)
+  + mean of twelve factors relating to surface learning. Each item has integer values 1-5
+* points (total exam points, numeric variable with integer values)
+
+```{r}
+#reading dataset
+analysis_data <- read.csv(file='/home/jkox/Git/proj/IODS-project/data/learning2014.csv')
+analysis_data$gender <- factor(analysis_data$gender) #setting gender as factor
+
+dim(analysis_data) #the dimensions of the dataset
+
+str(analysis_data) #the structure of the dataset
+
+head(analysis_data,10) #the first 10 rows of the dataset
+```
+
+There are 110 female and 56 male in the datasets. Theee seems to be no large differences in distributions of continuous variables by gender although the mean of attitude for male is larger than the mean for female. The distribution of age is right skewed. The distributions of other continuous variables are visually normal distributed. The largest positive correlation is between points and attitude, and largest negative correlation between surf and deep. 
+
+```{r, fig.width=12,fig.height=8}
+#graphical overview:
+p <- ggpairs(analysis_data, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+p
+summary(analysis_data) #basic summaries of the variables
+```
+
+### Linear model
+
+Linear regression model is used to assess the relationship between target variable points and explanatory variables attitude, age and stra. The intercept of the model is statistically significant. The beta coefficients of attitude and stra are larger than zero meaning they are positively associated with points. On the contrary, age is negatively associated with points. However, t-test results show that only the relationship between points and attitude is statistically significant. This means that with the probability of 0.00025 the beta coefficient of attitude is zero (very unlikely). The beta coefficients of age and stra have p-values larger than 0.05 and are thus non-significant.\
+
+Since age is the variable with the largest p-value, linear model is fitted without it. In this second model the relationship between points and stra remains non-significant so a third model with only attitude as an explanatory variable is fitted. The intercept of the final model is 11.64 and the beta coefficient of attitude is 3.53. The intercept can be interpreted as the expected value of points when attitude equals zero. In addition, the beta coefficient of attitude is the expected increase in points when attitude increases by one unit. The multiple R squared of the final model is 0.19. This means that 19% of the variation in the data is explained by the final model.\
+```{r, fig.width=12,fig.height=8}
+my_model <- lm(points ~ attitude+age+stra, data = analysis_data) #model with attitude, age and stra
+summary(my_model)
+my_model2 <- lm(points ~ attitude+stra, data = analysis_data) #model with attitude and stra
+summary(my_model2)
+my_model3 <- lm(points ~ attitude, data = analysis_data) #model with attitude
+summary(my_model3)
+p <- qplot(attitude, points, data = analysis_data) + geom_smooth(method = "lm") #plot
+p
+```
+
+### Model diagnostic plots
+
+Linear model makes several assumptions. These assumptions include that:\
+
+1. The relationship between the target variable and the explanatory variable is linear.
+2. The residual errors are normally distributed.
+3. The residuals have a constant variance (homoscedasticity).
+
+The validity of these assumptions should be checked when using linear regression. Also, the presence of influential values in the data should be checked.
+
+The model diagnostic plots of the final model are presented below. Residuals vs. fitted plot can be used to check the assumptions 1 and 3. Now, a horizontal line is an indication for a linear relationship. However, there seems to be heteroscedasticity present since the spread of the residuals is not approximately the same across the x-axis. Normal Q-Q plot indicates that there seems to be a violation of assumption 2, since the residuals are not following the straight line at the ends of the line.
+
+Residuals vs Leverage plot is used to check whether there are outliers or data points with high leverage. Outliers can be identified by examining the standardized residuals of data points. Cook's distance measures the influence of the data points as a combination of leverage and residual size. Data points with three largest Cook's distances are labelled in Residuals vs Leverage plot. There are no points outside the red dashed line so there are no influential data points.
+
+```{r, fig.width=12,fig.height=8}
+par(mfrow=c(2,2))
+plot(my_model3,1)
+plot(my_model3,2)
+plot(my_model3,5)
+```
+
