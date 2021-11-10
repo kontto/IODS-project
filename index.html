@@ -247,9 +247,9 @@ pre code {
 analysis_data &lt;- read.csv(file=&#39;/home/jkox/Git/proj/IODS-project/data/learning2014.csv&#39;)
 analysis_data$gender &lt;- factor(analysis_data$gender) #setting gender as factor
 
-dim(analysis_data) #the dimensions of the data</code></pre>
+dim(analysis_data) #the dimensions of the dataset</code></pre>
 <pre><code>## [1] 166   7</code></pre>
-<pre class="r"><code>str(analysis_data) #the structure of the data</code></pre>
+<pre class="r"><code>str(analysis_data) #the structure of the dataset</code></pre>
 <pre><code>## &#39;data.frame&#39;:    166 obs. of  7 variables:
 ##  $ gender  : Factor w/ 2 levels &quot;F&quot;,&quot;M&quot;: 1 2 1 2 2 1 2 1 2 1 ...
 ##  $ age     : int  53 55 49 53 49 38 50 37 37 42 ...
@@ -288,7 +288,7 @@ p</code></pre>
 <h3>Linear model</h3>
 <p>Linear regression model is used to assess the relationship between target variable points and explanatory variables attitude, age and stra. The intercept of the model is statistically significant. The beta coefficients of attitude and stra are larger than zero meaning they are positively associated with points. On the contrary, age is negatively associated with points. However, t-test results show that only the relationship between points and attitude is statistically significant. This means that with the probability of 0.00025 the beta coefficient of attitude is zero (very unlikely). The beta coefficients of age and stra have p-values larger than 0.05 and are thus non-significant.<br />
 </p>
-<p>Since age is the variable with the largest p-value, linear model is fitted without it. The relationship between points and stra remain non-significant so a third model with only attitude as an explanatory variable is fitted. The intercept of the final model is 11.64 and the beta coefficient of attitude 3.53. The intercept can be interpreted as the expected value of points when attitude equals zero. In addition, the beta coefficient of attitude is the expected increase in points when attitude increases by one unit. This is also called slope. The multiple R squared of the final model is 0.19. This means that 19% of the variation in the data is explained by the final model.<br />
+<p>Since age is the variable with the largest p-value, linear model is fitted without it. In this second model the relationship between points and stra remains non-significant so a third model with only attitude as an explanatory variable is fitted. The intercept of the final model is 11.64 and the beta coefficient of attitude is 3.53. The intercept can be interpreted as the expected value of points when attitude equals zero. In addition, the beta coefficient of attitude is the expected increase in points when attitude increases by one unit. The multiple R squared of the final model is 0.19. This means that 19% of the variation in the data is explained by the final model.<br />
 </p>
 <pre class="r"><code>my_model &lt;- lm(points ~ attitude+age+stra, data = analysis_data) #model with attitude, age and stra
 summary(my_model)</code></pre>
@@ -360,16 +360,16 @@ p</code></pre>
 </div>
 <div id="model-diagnostic-plots" class="section level3">
 <h3>Model diagnostic plots</h3>
-<p>Linear model makes several assumptions. These assumptions include:<br />
+<p>Linear model makes several assumptions. These assumptions include that:<br />
 </p>
 <ol style="list-style-type: decimal">
 <li>The relationship between the target variable and the explanatory variable is linear.</li>
 <li>The residual errors are normally distributed.</li>
 <li>The residuals have a constant variance (homoscedasticity).</li>
 </ol>
-<p>The validity of these assumptions should be checked when using linear regressnio. Also, the presence of influential values and outliers in the data should be checked.</p>
-<p>The model diagnostic plots of the final model are presented below. Residuals vs. fitted -plot can be used to check the assumptions 1 and 3. Now, a horizontal line is an indication for a linear relationship. However, there seems to be heteroscedasticity present since the spread of the residuals is approximately not the same across the x-axis. Normal Q-Q plot indicates that there seems to be a violation of assumption 2, since the residuals are not following the straight line at the ends of the line.</p>
-<p>Residuals vs Leverage -plot is used to check whether there are outliers or data points with high leverage. Outliers can be identified by examining the standardized residuals of data points. Cook’s distance measures the influence of the data points as a combination of leverage and residual size. Data points with three largest Cook’s distances are labelled in Residuals vs Leverage -plot. There are no points outside the red dashed line so there are no influential data points.</p>
+<p>The validity of these assumptions should be checked when using linear regression. Also, the presence of influential values in the data should be checked.</p>
+<p>The model diagnostic plots of the final model are presented below. Residuals vs. fitted plot can be used to check the assumptions 1 and 3. Now, a horizontal line is an indication for a linear relationship. However, there seems to be heteroscedasticity present since the spread of the residuals is not approximately the same across the x-axis. Normal Q-Q plot indicates that there seems to be a violation of assumption 2, since the residuals are not following the straight line at the ends of the line.</p>
+<p>Residuals vs Leverage plot is used to check whether there are outliers or data points with high leverage. Outliers can be identified by examining the standardized residuals of data points. Cook’s distance measures the influence of the data points as a combination of leverage and residual size. Data points with three largest Cook’s distances are labelled in Residuals vs Leverage plot. There are no points outside the red dashed line so there are no influential data points.</p>
 <pre class="r"><code>par(mfrow=c(2,2))
 plot(my_model3,1)
 plot(my_model3,2)
