@@ -2,12 +2,14 @@
 #Jukka Kontto
 #9th November 2021
 
-#Useful link: http://www.sthda.com/english/articles/40-regression-analysis/167-simple-linear-regression-in-r/
-
 #Regression and model validation
 
+#Useful link: http://www.sthda.com/english/articles/40-regression-analysis/167-simple-linear-regression-in-r/
+
+#Reading data:
 mydata <- read.table(url("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt"),sep="\t",header=TRUE)
 
+#Checking data:
 dim(mydata) #183 rows and 60 variables
 names(mydata) #names of the variables
 str(mydata) #all are numeric variables except gender
@@ -19,6 +21,7 @@ summary(mydata)
 
 library(dplyr)
 
+#Three new variables:
 deep_questions <- c("D03", "D11", "D19", "D27", "D07", "D14", "D22", "D30","D06",  "D15", "D23", "D31")
 surface_questions <- c("SU02","SU10","SU18","SU26", "SU05","SU13","SU21","SU29","SU08","SU16","SU24","SU32")
 strategic_questions <- c("ST01","ST09","ST17","ST25","ST04","ST12","ST20","ST28")
@@ -32,11 +35,13 @@ mydata$surf <- rowSums(surface_columns)
 strategic_columns <- select(mydata, one_of(strategic_questions))
 mydata$stra <- rowSums(strategic_columns)
 
+#Variables selected:
 keep_columns <- c("gender","Age","Attitude", "deep", "stra", "surf", "Points")
 
 analysis_data <- select(mydata,one_of(keep_columns))
 
-names(analysis_data) <- tolower(names(analysis_data)) #all variable names to lower case
+#All variable names to lower case:
+names(analysis_data) <- tolower(names(analysis_data))
 
 #Scaling combination variables:
 analysis_data$deep <- analysis_data$deep/12
@@ -44,6 +49,7 @@ analysis_data$stra <- analysis_data$stra/8
 analysis_data$surf <- analysis_data$surf/12
 analysis_data$attitude <- analysis_data$attitude/10
 
+#Only those with points>0
 analysis_data <- filter(analysis_data, points>0)
 analysis_data$gender <- factor(analysis_data$gender)
 dim(analysis_data) #166 x 7, OK
@@ -51,11 +57,13 @@ str(analysis_data)
 head(analysis_data)
 summary(analysis_data)
 
+#Checking working directory:
 getwd() #"/home/jkox/Git/proj/IODS-project" (working directory OK)
 
 #saving data:
 write.csv(analysis_data,file='data/learning2014.csv',row.names = FALSE)
 
+#Test: Reading data
 test.analysis_data <- read.csv(file='data/learning2014.csv')
 str(test.analysis_data) #OK
 head(test.analysis_data) #OK
