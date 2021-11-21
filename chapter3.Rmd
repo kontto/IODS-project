@@ -1,0 +1,103 @@
+
+## 3. Logistic regression
+
+### Data
+
+```{r, echo=FALSE, message=FALSE}
+library(GGally)
+library(ggplot2)
+library(dplyr)
+```
+
+In this week analysis we use Student performance Data Set which contains information about student performance in mathematics and Portuguese language in secondary education of two Portuguese schools. The data attributes include student grades, demographic, social and school related features, and it was collected by using school reports and questionnaires. The analysis dataset consists of 370 students and 51 variables. The full description of dataset is available in [_here_](https://archive.ics.uci.edu/ml/datasets/Student+Performance).
+```{r}
+#reading dataset
+pormath <- read.csv(file='/home/jkox/Git/proj/IODS-project/data/pormath.csv')
+
+#names of the variables
+names(pormath)
+
+dim(pormath) #the dimensions of the dataset
+
+str(pormath) #the structure of the dataset
+
+head(pormath,10) #the first 10 rows of the dataset
+```
+
+### Hypothesis and data exploration
+
+Four interesting variables are selected from the analysis dataset, and the association of those variables with high/low alcohol use (high_use) is examined. The four selected variables are :\
+
+* absences (the mean of school absences from classes of mathematics and Portuguese language)
+* health (current health status)
+* age
+* sex
+
+The hypothesis about the association of these variables with alcohol use is that the mean of absences is higher and health status is lower among those with high alcohol use. Furthermore, it is assumed that high alcohol use is more frequent among men than among women, and that age is positively associated with high alcohol use.
+
+There are 111 high alcohol users and 259 low alcohol users in the data. The age range is 15 to 22 years, and there are 195 women and 175 men in the analysis dataset. The mean of absences varies from 0 to 45. When looking the graphical presentation of the pairwise associations between the variables, there seems to be more absences among the high alcohol users. Also, high alcohol users are older than low alcohol users, and the proportion of high alcohol use is higher among men than among women, However, there seems to be no association between high alcohol use and health status. Furthermore, looking the proportions of health status classes by alcohol use, there seems to be no difference.
+
+These findings are in line with the prior hypothesis, except for health status, where a lower health was assumed to be associated with high alcohol use.
+
+```{r, fig.width=12,fig.height=8}
+summary(subset(pormath, select=c('high_use','absences','health','sex','age')))
+table(pormath$sex)
+
+p <- ggpairs(subset(pormath, select=c('high_use','absences','health','sex','age')), mapping = aes(col=high_use,alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+table(pormath$high_use,pormath$health) %>% prop.table(1)
+```
+
+### Logistic regression
+
+Logistic regression model was fitted with high alcohol use as target variables and the four selected variables as explanatory variables.\
+
+The mean of absences an sex have statistically significant association with high alcohol use. The odds ratio of absences is 1.097 with the interpretation that the expected increase in the odds of being a high alcohol user in 9.7%, for a one-unit increase in absences. Likewise, the expected odds of being a high alcohol user is 2.72 higher for men than for women.\
+
+The results indicate that the prior hypothesis concerning absences and sex was correct. However, there is not enough evidence for the hypothesis that older age and lower health were positively associated wth high alcohol use.
+
+```{r, fig.width=12,fig.height=8}
+m <- glm(high_use ~ absences + health + sex + age, data = pormath, family = "binomial")
+summary(m)
+
+Coeff <- coef(m) %>% exp
+CI <- confint(m) %>% exp
+cbind(Coeff,CI)
+```
+
+### Predictions
+
+The model with only absences and sex as explanatory variables is fitted and model performance is evaluated. 91% of the students are predicted as low alcohol users and 9% are predicted as high alcohol users. 68% of students are both low alcohol users and predicted as low alcohol users. The corresponding figure for high alcohol users is 7%. The training error is 25%. This performance is compared to simple guessing strategies: all students are predicted to be low alcohol users and high alcohol users. The performance of these strategies was worse than the training error.
+
+```{r, fig.width=12,fig.height=8}
+
+m2 <- glm(high_use ~ absences + sex, data = pormath, family = "binomial")
+
+probabilities <- predict(m2, type = "response")
+pormath <- mutate(pormath, probability = probabilities)
+pormath <- mutate(pormath, prediction = probability>0.5)
+
+# tabulate the target variable versus the predictions
+with(pormath,table(high_use, prediction))
+
+# table with proportions
+table(high_use = pormath$high_use, prediction = pormath$prediction) %>% prop.table %>% addmargins()
+
+# plot
+g <- ggplot(pormath, aes(x = probability, y = high_use, col=prediction)) + geom_point()
+g
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+#training error:
+loss_func(class = pormath$high_use, prob = pormath$probability)
+
+#simple guessing strategies:
+loss_func(class = pormath$high_use, prob = 0)
+loss_func(class = pormath$high_use, prob = 1)
+```
