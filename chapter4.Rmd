@@ -1,0 +1,115 @@
+
+## 4. Classification and clustering
+
+### Data
+
+```{r, echo=FALSE, message=FALSE}
+library(MASS)
+```
+
+In this week analysis we use data consisting of housing values in suburbs of Boston from R package MASS. The data has information about socio-economic, business, geographical, and environmental characteristics of towns in Boston. The data has 506 rows and 14 columns with all the variables numeric, with the exception of dummy variable `chas` . The description of the data is [_here_](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html).\
+
+The distributions of `crim`, `zn`, `dis`, and `black` are very skewed, while the distributions of `indus`, `rad` and `tax` are bimodal. The largest correlations are between `indus` and `nox` (positive), `indus` and `dis` (negative), `indus` and `tax` (positive), `nox` and `age` (positive), `nox` and `dis` (negative), `age` and `dis` (negative), `rad` and `tax` (positive), and `lstat` and `medv` (negative).
+
+```{r, fig.width=12,fig.height=8}
+
+data("Boston") #loading data
+
+str(Boston) #structure
+
+dim(Boston) #dimensions
+
+summary(Boston)
+
+p <- ggpairs(Boston, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+```
+
+The standardized data is summarized below. All the standardized variables have a mean equal to 0 and a standard deviation equal to 1. A new categorical variable `crime` is derived and data is divided into train and test sets.
+
+```{r, fig.width=12,fig.height=8}
+
+boston_scaled <- data.frame(scale(Boston))
+
+summary(boston_scaled)
+
+#New variable `crime` is derived:
+bins <- quantile(boston_scaled$crim)
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, label = c("low","med_low","med_high","high"))
+boston_scaled$crim <- NULL
+boston_scaled$crime <- crime
+
+#Dividing the data to train and test datasets:
+ind <- sample(nrow(boston_scaled),  size = nrow(boston_scaled) * 0.8)
+train <- boston_scaled[ind,] #training set
+test <- boston_scaled[-ind,] #test set
+
+```
+
+### Linear discriminant analysis (LDA)
+
+Linear discriminant analysis is fitted on the training set with the variable `crime` as target variable. Then, biplot is drawn. 
+
+```{r, fig.width=12,fig.height=8}
+lda.fit <- lda(crime~., data = train)
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col=classes,pch=classes)
+lda.arrows(lda.fit, myscale = 2)
+
+
+```
+
+### Predictions
+
+The crime classes of the test set are predicted using the fitted LDA model. When tabulating the correct and the predicted values, there are nine observations with correct value "low" and predicted value "med_low", and nine observations with correct value "med_low" and predicted value "med_high". Otherwise the predicted values seem to correspond the correct values well.
+
+
+```{r, fig.width=12,fig.height=8}
+correct_classes <- test$crime #saving crime categories
+test$crime <- NULL #removing crime from test set
+
+lda.pred <- predict(lda.fit, newdata = test)
+
+table(correct = correct_classes, predicted = lda.pred$class)
+
+```
+
+### Distances
+
+The distances between the observations in the scaled Boston data are calculated. K-means algorithm is run with number of clusters from 1 to 10 to find the optimal number of clusters. The resulting plot shows that the total of within cluster sum of squares drops most radically when the number of clusters is two. When looking at the visualization of the two clusters in relation of the variables in Boston data, we see that the distributions of `indus`, `nox`, `dis`, and `tax` by cluster separates the clusters quite well. The distribution of `rm` by cluster are almost identical.
+
+```{r, fig.width=12,fig.height=8, warning=FALSE}
+
+data(Boston)
+
+boston_scaled <- scale(Boston)
+
+dist_eu <- dist(boston_scaled) #distances
+
+set.seed(544356)
+
+twcss <- sapply(1:10, function(k){kmeans(boston_scaled, k)$tot.withinss}) #total within cluster sum of squares
+
+# visualize the results
+qplot(x = 1:10, y = twcss, geom = 'line') + scale_x_continuous(breaks=seq(1,10,by=1)) + xlab('number of clusters') 
+
+km <-kmeans(boston_scaled, centers = 2) #km-algorithm with the number of clusters = 2
+
+p <- ggpairs(data.frame(boston_scaled), mapping = aes(col = factor(km$cluster), alpha=0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
