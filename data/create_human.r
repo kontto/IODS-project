@@ -64,3 +64,81 @@ dim(human) #195 x 19, OK
 write.csv(human,file="/home/jkox/Git/proj/IODS-project/data/human.csv",row.names = FALSE)
 
 
+#Week 5 data wrangling
+
+library(dplyr)
+library(stringr)
+
+human <- read.csv(file="/home/jkox/Git/proj/IODS-project/data/human.csv")
+
+str(human)
+# 'data.frame':	195 obs. of  19 variables:
+#   $ hdi_rank    : int  1 2 3 4 5 6 6 8 9 9 ...
+# $ country     : chr  "Norway" "Australia" "Switzerland" "Denmark" ...
+# $ hdi         : num  0.944 0.935 0.93 0.923 0.922 0.916 0.916 0.915 0.913 0.913 ...
+# $ life_exp    : num  81.6 82.4 83 80.2 81.6 80.9 80.9 79.1 82 81.8 ...
+# $ exp_edu     : num  17.5 20.2 15.8 18.7 17.9 16.5 18.6 16.5 15.9 19.2 ...
+# $ mean_edu    : num  12.6 13 12.8 12.7 11.9 13.1 12.2 12.9 13 12.5 ...
+# $ GNI_cap     : chr  "64,992" "42,261" "56,431" "44,025" ...
+# $ GNI_HDI_diff: int  5 17 6 11 9 11 16 3 11 23 ...
+# $ gii_rank    : int  1 2 3 4 5 6 6 8 9 9 ...
+# $ gii         : num  0.067 0.11 0.028 0.048 0.062 0.041 0.113 0.28 0.129 0.157 ...
+# $ mm_ratio    : int  4 6 6 5 6 7 9 28 11 8 ...
+# $ a_birth_rate: num  7.8 12.1 1.9 5.1 6.2 3.8 8.2 31 14.5 25.3 ...
+# $ parlrep_p   : num  39.6 30.5 28.5 38 36.9 36.9 19.9 19.4 28.2 31.4 ...
+# $ edu2F       : num  97.4 94.3 95 95.5 87.7 96.3 80.5 95.1 100 95 ...
+# $ edu2M       : num  96.7 94.6 96.6 96.6 90.5 97 78.6 94.8 100 95.3 ...
+# $ labF        : num  61.2 58.8 61.8 58.7 58.5 53.6 53.1 56.3 61.6 62 ...
+# $ labM        : num  68.7 71.8 74.9 66.4 70.6 66.4 68.1 68.9 71 73.8 ...
+# $ edu2R       : num  1.007 0.997 0.983 0.989 0.969 ...
+# $ labR        : num  0.891 0.819 0.825 0.884 0.829 ...
+
+dim(human) #195 x 19
+
+#Dataset has 19 variables concerning country-specific information about people capabilities, health, education, economics, and gender inequality.
+#The dataset originates from the United Nations Development Programme.
+#The variables are:
+#hdi_rank = the ranking of countries in terms of Human Development Index (HDI)
+#hdi = Human development Index
+#life_exp = life expentance at birth
+#exp_edu = expected years of education
+#mean_edu = mean years of education
+#GNI_cap = gross national income per capita
+#GNI_HDI_diff = The difference between GNI and HDI rankings
+#gii_rank = the ranking of countries in terms of Gender Inequality Index (GII)
+#gii = Gender Inequality Index
+#mm_ratio = maternal mortality ratio
+#a_birth_rate = adolescent birth rate
+#parlrep_p = representation in parliament, percent
+#edu2F = population with secondary education among female
+#edu2M = population with secondary education among male
+#labF = labour force participation rate among female
+#labM = labour force participation rate among male
+#edu2R = ratio between edu2F and edu2M
+#labR = ratio between labF and labM
+
+
+#mutating GNI_cap:
+human$GNI_cap <- str_replace(human$GNI_cap, pattern=",", replace ="") %>% as.numeric
+
+#keeping relevant variables:
+keep_columns <- c("country","edu2F","labF","exp_edu","life_exp","GNI_cap","mm_ratio","a_birth_rate","parlrep_p")
+human <- dplyr::select(human, one_of(keep_columns))
+
+#excluding rows with missing data:
+human <- filter(human, complete.cases(human))
+
+#excluding regions (and keeping countries):
+tail(human$country,10) #last 7 are regions
+human <- human[1:(nrow(human)-7),]
+
+#defining countries as row names and excluding variable country
+rownames(human) <- human$country
+human <- dplyr::select(human,-country)
+
+dim(human) #155 x 8, OK
+
+#saving data:
+write.csv(human,file="/home/jkox/Git/proj/IODS-project/data/human.csv",row.names = TRUE)
+
+
