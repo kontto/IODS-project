@@ -4,6 +4,58 @@
 
 #Dimensionality reduction techniques
 
+#links to interpret PCA results:
+#https://blog.bioturing.com/2018/06/18/how-to-read-pca-biplots-and-scree-plots/
+#https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/Principal-Component-Analysis/principal-components-basics/Interpretation-and-visualization/index.html#:~:text=Interpreting%20Biplots,in%20a%20single%20biplot%20display.&text=The%20plot%20shows%20the%20observations,principal%20components%20(synthetic%20variables).
+
+human <- read.csv(file="/home/jkox/Git/proj/IODS-project/data/human.csv",row.names = 1)
+
+str(human) #structure
+
+dim(human) #dimensions
+
+summary(human)
+
+library(GGally)
+p <- ggpairs(human, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+#PCA 1
+
+pca_human <- prcomp(human)
+s <- summary(pca_human)
+round(100*s$importance[2, ], digits = 1)
+biplot(pca_human, choices = 1:2, cex=c(0.8,1), col=c("grey40","deeppink2"))
+
+#PCA 2
+
+human_std <- scale(human)
+pca_human_std <- prcomp(human_std)
+s_std <- summary(pca_human_std)
+pca_pr <- round(100*s_std$importance[2, ], digits = 1)
+pca_pr
+#pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)") # create object pc_lab to be used as axis labels
+pc_lab <- paste0(c('Human development','Equality'), " (", pca_pr, "%)") # create object pc_lab to be used as axis labels
+biplot(pca_human_std, choices = 1:2, cex=c(0.8,1), col=c("grey40","deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+
+#MCA
+
+library(FactoMineR)
+library(tidyr)
+data(tea)
+
+str(tea)
+dim(tea)
+
+gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free")  + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+names(tea)
+
+mca <- MCA(tea[,-19], graph = FALSE)
+summary(mca)
+plot(mca, invisible=c("ind"), habillage = "quali", grapth.type = "classic")
+
+biplot(mca, choices=1:2)
 
 
 

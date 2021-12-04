@@ -109,7 +109,7 @@ dim(human) #195 x 19
 #gii = Gender Inequality Index
 #mm_ratio = maternal mortality ratio
 #a_birth_rate = adolescent birth rate
-#parlrep_p = representation in parliament, percent
+#parlrep_p = female representation in parliament, percent
 #edu2F = population with secondary education among female
 #edu2M = population with secondary education among male
 #labF = labour force participation rate among female

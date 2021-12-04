@@ -1,0 +1,75 @@
+
+## 5. Dimensionality reduction techniques
+
+### Data
+
+```{r, echo=FALSE, message=FALSE}
+library(GGally)
+```
+
+The distributions of `GNI_cap`, `mm_ratio`, and `a_birth_arte` are very skewed, while the distributions of `labF`, `exp_edu` and `parlrep_p` seem to follow normal distribution. The highest correlation is between `mm_ratio` and `life_exp` (-0.857), and there are also several other high correlations between `exp_edu`, `edu2F`, `life_exp`, `mm_ratio` and `a_birth_rate`.
+
+```{r, fig.width=12,fig.height=8}
+
+human <- read.csv(file="/home/jkox/Git/proj/IODS-project/data/human.csv",row.names = 1)
+
+str(human) #structure
+
+dim(human) #dimensions
+
+summary(human)
+
+p <- ggpairs(human, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+```
+
+### Principal component analysis (PCA)
+
+First, PCA is performed with not standardized data. The first principal component captures all the variablity of the data. Looking at the biplot we see, that `GNI_cap` is the only variable influencing PC1, since only the arrow of `GNI_cap` is parallel to the x-axis.  Nothing can be said about the correlations between variables, since the direction of the arrows of other variables is not visible.
+
+```{r, fig.width=12,fig.height=8, warning=FALSE}
+pca_human <- prcomp(human)
+summary(pca_human)
+round(100*summary(pca_human)$importance[2, ], digits = 1) # rounded percetanges of variance captured by each PC
+biplot(pca_human, choices = 1:2, cex=c(0.8,1), col=c("grey40","deeppink2"))
+```
+
+Then, PCA is performed again with standardized data. Now, the first principal compenent captures 57% and the second principal component 16% of the variability. These percentages are included as captions in the biplot. Variables `exp_edu`, `edu2F`, `life_exp`, `mm_ratio`, `a_birth_rate`, and `GNI_cap` are influencing PC1 approximately equally (looking at the length of the arrows), since their arrows are parallel to the x-axis. Looking at the direction of the arrows, variables `exp_edu`, `edu2F`, `life_exp`, and `GNI_cap` have strong positive correlation between them, as have `mm_ratio` and `a_birth_rate`. However, `mm_ratio` and `a_birth_rate` have strong negative correlation with `exp_edu`, `edu2F`, `life_exp`, and `GNI_cap`. Variables `parlrep_p` and `labF` are influencing PC2 equally. They also have a positive correlation between them.
+
+```{r, fig.width=12,fig.height=8}
+human_std <- scale(human)
+pca_human_std <- prcomp(human_std)
+s_std <- summary(pca_human_std)
+pca_pr <- round(100*s_std$importance[2, ], digits = 1)
+pca_pr # rounded percetanges of variance captured by each PC
+pc_lab <- paste0(c('Human development','Equality'), " (", pca_pr, "%)") # create object pc_lab to be used as axis labels
+biplot(pca_human_std, choices = 1:2, cex=c(0.8,1), col=c("grey40","deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2])
+```
+
+The results between two PCAs are different. This is mostly due to the fact that the not standardized values of `GNI_cap` are much larger compared to other variables, and therefore `GNI_cap` dominates the PCA with not standardized data, and the effect of other variables remains hidden.\
+
+The first principal component consists of variables relating to education, mortality, and wealth, which all describe the development of a country. So, the first principal component is named 'Human development' (also in the biplot). The second principal component is named 'Equality', since variables `parlrep_p` and `labF` are percentages of female participation in parliament and labour force, respectively.
+
+### Multiple Correspondence Analysis (MCA)
+
+The tea dataset is used for MCA. The structure, the dimensions, and the visualization of the data are presented below.
+
+```{r, fig.width=12,fig.height=16, warning=FALSE}
+library(FactoMineR)
+library(tidyr)
+
+data(tea)
+str(tea)
+dim(tea)
+
+gather(tea) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free")  + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+MCA is performed for all the categorical variables in the tea dataset. This leaves out continuous variable `age`. The first dimension captures 5.8% of the variation, and the second dimension 5.3%. The small percentages are most probably due to all variables being selected to the analysis. When looking at the biplot, we see that categories 'other', 'tearoom', 'chain store+tea shop', and 'dinner' are the most influential categories for dimension 1. Similarly, categories 'tea shop', '+60', 'unpackaged', 'p_upscale', 'student', and '15-24' are the most influential categories for dimension 2. If the categories are on opposite sides of the plot, a dimension contrasts these categories. For instance, categories '+60' and '15-24' are on the opposite sides of the plot in relation of dimension 2.
+
+```{r, fig.width=12,fig.height=8, warning=FALSE}
+mca <- MCA(tea[,-19], graph = FALSE) #age is excluded
+summary(mca)
+plot(mca, invisible=c("ind"), habillage = "quali", grapth.type = "classic")
+```
