@@ -1,0 +1,210 @@
+
+## 6. Analysis of longitudinal data
+
+### Data
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(lme4)
+```
+
+#### Part 1:
+
+RATS data (in long format) is used for implementing the analyses of [__Chapter 8 of MABS__](https://mooc.helsinki.fi/pluginfile.php/192850/course/section/7335/MABS4IODS-Part6.pdf).
+
+```{r, fig.width=12,fig.height=8}
+
+RATS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", header = TRUE) #reading RATS data in wide format
+RATSL <- read.csv(file="/home/jkox/Git/proj/IODS-project/data/RATSL.csv") #reading RATS data is long format
+
+#convertng as factors:
+RATSL$ID <- factor(RATSL$ID)
+RATSL$Group <- factor(RATSL$Group)
+
+glimpse(RATSL) #glimpsing data
+
+```
+
+First, the plot with individual response profiles is drawn. We see that weights in group 1 are lower than in groups 2 and 3, and weights in group 2 seem to be lower than in group 3. In all groups, there is one individual with weights on a different level compared to other individuals in the same group (outlier). In all groups, weights seem to increase over time.\
+
+After standardizing weight measurements, we see that the difference between groups 2 and 3 becomes clearer. Also, the increasing trends in weights disappear.
+
+```{r, fig.width=12,fig.height=8, warning=FALSE}
+# Draw the plot
+ggplot(RATSL, aes(x = Time, y = Weight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+
+# Standardise the variable Weight
+RATSL <- RATSL %>%
+  group_by(Time) %>%
+  mutate(stdweight = (Weight-mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+# Plot again with the standardised Weight
+ggplot(RATSL, aes(x = Time, y = stdweight, linetype = ID)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") +
+  scale_y_continuous(name = "standardized Weight")
+```
+
+Then, we calculate the means and standard errors by group and time, and visualize them. Again, group 1 weights are lower than the weights of other two groups. However, there seems to be no difference between groups 2 and 3, since the error bars overlap. However, when drawing boxplots we see that in both groups 2 and 3 there is one outlier. These outliers might cause the overlapping error bars.
+
+```{r, fig.width=12,fig.height=8, message=FALSE}
+# Summary data with mean and standard error of Weight by Group and Time 
+RATSS <- RATSL %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = sd(Weight)/sqrt(length(Weight)) ) %>%
+  ungroup()
+
+# Plot the mean profiles
+ggplot(RATSS, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.9,0.5)) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+
+# Boxplot by Time and Group
+ggplot(RATSL, aes(x = factor(Time), y = Weight, fill=Group)) +
+  geom_boxplot() +
+  scale_x_discrete(name = "Time")
+```
+
+Next, boxplots by group are drawn with excluding the weight measurements of the first timepoint. We again see that there is one outlier in each group. The boxplots are drawn again without outliers.
+
+```{r, fig.width=12,fig.height=16, message=FALSE}
+# Create a summary data by Group and ID with mean as the summary variable (ignoring baseline Time 1).
+RATSL8S <- RATSL %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+
+# Draw a boxplot of the mean versus treatment
+ggplot(RATSL8S, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), Time 1 excluded")
+
+RATSL8S1 <- RATSL8S %>% filter(!((Group%in%1 & mean<240) | (Group%in%2 & mean>500) | (Group%in%3 & mean<500)))
+
+ggplot(RATSL8S1, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), Time 1 excluded")
+```
+
+Then, t-tests for testing the difference between the means of the groups are executed. With the data including outliers there is statistically significant difference between groups 1 and 2, and groups 1 and 3. However, when performing t-tests for data without outliers, all pairwise differences between groups are statistically significant.
+
+```{r, fig.width=12,fig.height=16, warning=FALSE}
+t.test(mean ~ Group, data = RATSL8S, subset = Group%in%c(1,2), var.equal = TRUE) #p<<<0.05
+t.test(mean ~ Group, data = RATSL8S, subset = Group%in%c(1,3), var.equal = TRUE) #p<<<0.05
+t.test(mean ~ Group, data = RATSL8S, subset = Group%in%c(2,3), var.equal = TRUE) #p=0.33
+
+t.test(mean ~ Group, data = RATSL8S1, subset = Group%in%c(1,2), var.equal = TRUE) #p<<<0.05
+t.test(mean ~ Group, data = RATSL8S1, subset = Group%in%c(1,3), var.equal = TRUE) #p<<<0.05
+t.test(mean ~ Group, data = RATSL8S1, subset = Group%in%c(2,3), var.equal = TRUE) #p<<<0.05
+```
+
+Finally, we include the weight measurements of the first timepoint (baseline) in the analysis, and fit a linear model with mean as a response variable, and group and the baseline weight as explanatory variables. Results from analysis of variance show that baseline is statistically significant, and group is not. This implies that the baseline measurement is strongly associated with weight measurements after baseline, but there is no separate group effect after conditioning for the baseline value.
+
+```{r, fig.width=12,fig.height=16, warning=FALSE}
+# Add the baseline from the original data as a new variable to the summary data
+RATSL8S2 <- RATSL8S %>%
+  mutate(baseline = RATS$WD1)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline + Group, data = RATSL8S2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+```
+
+#### Part 2:
+
+BPRS data (in long format) is used for implementing the analyses of [__Chapter 9 of MABS__](https://mooc.helsinki.fi/pluginfile.php/192850/course/section/7335/MABS4IODS-Part6.pdf).
+
+```{r, fig.width=12,fig.height=8}
+
+BPRSL <- read.csv(file="/home/jkox/Git/proj/IODS-project/data/BPRSL.csv") #reading BPRS data is long format
+
+# Factor variables subject and treatment
+BPRSL$subject <- factor(BPRSL$subject)
+BPRSL$treatment <- factor(BPRSL$treatment)
+
+# Glimpse the data
+glimpse(BPRSL)
+```
+
+First,  linear model is fitted with 'bprs' as a response variable and 'week' and 'treatment' as explanatory variables. The model results show that 'treatment' is not statistically significant, but 'week' is.\
+Next, linear mixed model with random intercept is fitted. The interpretation is that own regression line with different intercepts is estimated for each individual. ANOVA test shows that this model provides a better fit than linear model.\
+Then, linear mixed model with random intercept and slope is fitted. Now for each individual a slope is also estimated. This model has a better fit than the random intercept model, according ANOVA test.\
+Finally, an interaction between 'week' and 'treatment' is added to the model. ANOVA test gives a p-value 0.07495, so this model has not a better fit than the random intercept and slope model without interaction.
+
+```{r, fig.width=12,fig.height=8}
+# create a regression model RATS_reg
+BPRS_reg <- lm(bprs ~ week + treatment, data=BPRSL)
+
+# print out a summary of the model
+summary(BPRS_reg)
+
+# Create a random intercept model
+BPRS_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+
+# Print the summary of the model
+summary(BPRS_ref)
+
+# perform an ANOVA test on the two models
+anova(BPRS_ref, BPRS_reg)
+
+# create a random intercept and random slope model
+BPRS_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRSL, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_ref1)
+
+# perform an ANOVA test on the two models
+anova(BPRS_ref1, BPRS_ref)
+
+# create a random intercept and random slope model with the interaction
+BPRS_ref2 <- lmer(bprs ~ week + treatment + week * treatment + (week | subject), data = BPRSL, REML = FALSE)
+
+# print a summary of the model
+summary(BPRS_ref2)
+
+# perform an ANOVA test on the two models
+anova(BPRS_ref2, BPRS_ref1)
+```
+
+When plotting the original 'bprs' values and fitted values from the the random intercept and slope model with interaction by 'week' and 'treatment', we see that the 'bprs' values for each individual are estimated with separate intercept and slope.
+
+```{r, fig.width=12,fig.height=8}
+# Plot the BPRSL data
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+
+# Create a vector of the fitted values
+Fitted <- fitted(BPRS_ref2)
+
+# Create a new column fitted to RATSL
+BPRSL <- BPRSL %>% mutate(fitted = Fitted)
+
+# draw the plot with the fitted values
+ggplot(BPRSL, aes(x = week, y = Fitted, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none")
+```
